@@ -133,9 +133,9 @@ class c4:
                             break
                         
                     else: #yellow move
-                        action = self.rAgent.getBestMove(actions, n_iterations, self.rroot, self.grid)
+                        action = self.yAgent.getBestMove(actions, n_iterations, self.yroot, self.grid)
                         actions.append(action)
-                        self.grid.makeMove(RED, action)
+                        self.grid.makeMove(YELLOW, action)
                         self.grid.displayGrid()
                         if self.grid.checkWin():
                             print("YELLOW WINS\n")
@@ -154,11 +154,13 @@ main_grid = c4Grid()
 yAgent, rAgent, yroot, rroot = None, None, None, None
 
 if not (os.path.isfile("red.obj") and os.path.isfile("yellow.obj")):
+    print("Initializing new parameters...")
     yroot = Node(0, 0, None, rgrid.grid, rgrid.cols, rgrid.moveCnt, 0, 0, 0)
     rroot = Node(0, 0, None, ygrid.grid, ygrid.cols, ygrid.moveCnt, 0, 0, 0)
     rAgent=c4Agent(RED)
     yAgent=c4Agent(YELLOW)
 else:
+    print("Collecting existing parameters...")
     f=open("red.obj", "rb")
     g=open("yellow.obj", "rb")
     red_data=pickle.load(f)
@@ -171,6 +173,6 @@ else:
     g.close()
 
 c4 = c4(yroot, yAgent, rroot, rAgent, main_grid)
-c4.play(10, 10000) #training (number_of_games, number_of_iterations)
+c4.play(10, 1500) #training (number_of_games, number_of_iterations)
 c4.playAgainstRed(1, 1000) #play against human (number_of_games, number_of_iterations)
 
