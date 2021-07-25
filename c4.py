@@ -92,6 +92,7 @@ class c4:
                         self.grid.makeMove(RED, action)
                         self.grid.displayGrid()
                         if self.grid.checkWin():
+                            self.rAgent.feedFinalReward(actions, self.rroot, "WIN")
                             print("RED WINS\n")
                             win = True
                             break
@@ -113,6 +114,7 @@ class c4:
                             break   
                 if not win:
                     print("DRAW\n")
+                    self.rAgent.feedFinalReward(actions, self.yroot, "DRAW")
                 print("-----  GAME %s ENDS  -----\n"%(str(i+1)))        
                 self.grid.resetGrid()
 
@@ -151,6 +153,7 @@ class c4:
                             break
                 if not win:
                     print("DRAW\n")
+                    self.yAgent.feedFinalReward(actions, self.yroot, "DRAW")
                 print("-----  GAME %s ENDS  -----\n"%(str(i+1)))        
                 self.grid.resetGrid()
 
@@ -181,6 +184,6 @@ else:
     g.close()
 
 c4 = c4(yroot, yAgent, rroot, rAgent, main_grid)
-c4.play(10, 5000) #training (number_of_games, number_of_iterations)
-c4.playAgainstRed(1, 1000) #play against human (number_of_games, number_of_iterations)
+c4.play(20, 5000) #training (number_of_games, number_of_iterations)
+c4.playAgainstYellow(1, 1000) #play against human (number_of_games, number_of_iterations)
 
