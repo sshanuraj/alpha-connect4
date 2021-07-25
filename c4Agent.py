@@ -1,6 +1,7 @@
 import numpy as np 
 import random as rd 
 import torch
+from log import Logger
 import torch.nn as nn
 from c4Grid import c4Grid
 
@@ -16,8 +17,6 @@ RED = 2
 YELLOW = 1
 DRAW = -1
 MAX_MOVES = 42
-
-pieces={'.':0, 'P':1, 'p':2, 'N':3, 'n':4, 'B':5, 'b':6, 'R':7, 'r':8, 'Q':9, 'q':10, 'K':11, 'k':12}
 
 class NeuralNet(nn.Module):
     def __init__(self):
@@ -38,6 +37,7 @@ class c4Agent:
         self.color = color
         self.nnObj = NeuralNet().to(device=DEVICE, dtype=DTYPE)
         self.data_target_map={}
+        self.logger=Logger("c4Log.txt")
 
     def addDataTarget(self, data, target):
         data=tuple(data[0])
@@ -163,7 +163,7 @@ class c4Agent:
 
         if self.color == winColor:
             return 10 #for win
-        return -100000 #for loss
+        return -10000 #for loss
 
 
     def getBestMove(self, actions, n_iterations, root, grid):
@@ -195,46 +195,40 @@ class c4Agent:
 
         while count < n_iterations:
             if not change: #to reset curr to the initial node
+                #self.logger.log("LOG", "-------Running iteration %d-------"%(count+1))
                 curr = node
             if curr.checkLeaf():
-                # print("in leaf node")
                 if curr.n == 0:
-                    #start rollout
                     if curr.isTerminal:
-                        # print("is terminal in leaf")
                         reward = self.getRewardTerminal(curr.winColor)
-                        # print("Backpropagate reward")
                         curr.backpropagate(reward)
-                        
+                        #self.logger.log("LOG", "Got reward: %d, in leaf+terminal+unvisited node"%(reward))
                         count += 1
                         change = False
+                        #self.logger.log("LOG", "-------Ending iteration %d-------"%(count+1))
                         continue
                     else:
-                        # print("rollout in first visit")
                         vgrid = curr.state.copy()
                         vcols = curr.cols.copy()
                         colorToMove = YELLOW if curr.moveCnt%2 == 1 else RED
-                        
                         reward = self.rollout(vgrid, vcols, curr.moveCnt, colorToMove)
-                        # print("Backpropagate reward")
                         curr.backpropagate(reward)
+                        #self.logger.log("LOG", "Got reward: %d, in leaf+unvisited node"%(reward))
                         
                         count += 1
                         change = False
+                        #self.logger.log("LOG", "-------Ending iteration %d-------"%(count))
                         continue
                 else:
-                    #get node
                     colorToMove = YELLOW if curr.moveCnt%2 == 1 else RED
-                    # print("Expansion in visited node")
 
                     if curr.isTerminal:
-                        # print("is terminal node ")
                         reward = self.getRewardTerminal(curr.winColor)
-                        # print("Backpropagate reward")
                         curr.backpropagate(reward)
-                        
+                        #self.logger.log("LOG", "Got reward: %d, in leaf+terminal node"%(reward))
                         count += 1
                         change = False
+                        #self.logger.log("LOG", "-------Ending iteration %d-------"%(count))
                         continue
 
                     curr.populateNode(colorToMove)
@@ -243,37 +237,57 @@ class c4Agent:
                     curr, _, _ = curr.getMaxUcbNode(root.n)
 
                     if curr.isTerminal:
-                        # print("is terminal node after expansion")
                         reward = self.getRewardTerminal(curr.winColor)
-                        # print("Backpropagate reward")
                         curr.backpropagate(reward)
-                        
+                        #self.logger.log("LOG", "Got reward: %d, in leaf_expanded+terminal node"%(reward))
                         count += 1
                         change = False
+                        #self.logger.log("LOG", "-------Ending iteration %d-------"%(count))
                         continue
 
                     vgrid = curr.state.copy()
                     vcols = curr.cols.copy()
 
                     colorToMove = YELLOW if curr.moveCnt%2 == 1 else RED
-
-                    # print("Rollout in through expanded node")
                     reward = self.rollout(vgrid, vcols, curr.moveCnt, colorToMove)
-                    # print("Backpropagate reward")
                     curr.backpropagate(reward)
-                    
+                    #self.logger.log("LOG", "Got reward: %d, in expanded+leaf node"%(reward))
                     count += 1
                     change = False
+                    #self.logger.log("LOG", "-------Ending iteration %d-------"%(count))
                     continue
 
             else:
                 change = True
+                #self.logger.log("LOG", "Already visited, choosing max_ucb node")
                 curr, _ , _= curr.getMaxUcbNode(root.n)
 
         next_node, action, ucbs = node.getMaxUcbNode(root.n)
-        
-        # print("sending action %s and next node"%(str(action)))
-        # print("Total iterations", root.n)
         print(ucbs)
         return action
+
+    def feedFinalReward(self, actions, root, res):
+        node = root
+        prev_node = root
+        color = YELLOW
+
+        for action in actions:
+            prev_node = node
+
+            if len(node.children) > 0:
+                node = node.children[action]
+            else:
+                node = None
+            color = self.switchColor(color)
+
+            if not node: #check for when playing against human
+                prev_node.populateNode(color)
+                node = prev_node.children[action]
+
+        if res=="LOSS":
+            node.backpropagate(-1000000)
+        elif res=="WIN":
+            node.backpropagate(100)
+        else:
+            node.backpropagate(1)
 

@@ -43,6 +43,8 @@ class c4:
                     self.grid.makeMove(RED, action)
                     self.grid.displayGrid()
                     if self.grid.checkWin():
+                        self.yAgent.feedFinalReward(actions, self.yroot, "LOSS")
+                        self.rAgent.feedFinalReward(actions, self.rroot, "WIN")
                         print("RED WINS\n")
                         win = True
                         red_wins+=1
@@ -53,6 +55,8 @@ class c4:
                     self.grid.makeMove(YELLOW, action)
                     self.grid.displayGrid()
                     if self.grid.checkWin():
+                        self.yAgent.feedFinalReward(actions, self.yroot, "WIN")
+                        self.rAgent.feedFinalReward(actions, self.rroot, "LOSS")
                         print("YELLOW WINS\n")
                         win = True
                         yellow_wins+=1
@@ -60,6 +64,9 @@ class c4:
             if not win:
                 print("DRAW\n")
                 draw+=1
+                self.yAgent.feedFinalReward(actions, self.yroot, "DRAW")
+                self.rAgent.feedFinalReward(actions, self.rroot, "DRAW")
+ 
             print("-----  GAME %s ENDS  -----\n"%(str(i+1)))        
             self.yAgent.train(actions, self.yroot, 501)
             self.rAgent.train(actions, self.rroot, 501)
@@ -138,6 +145,7 @@ class c4:
                         self.grid.makeMove(YELLOW, action)
                         self.grid.displayGrid()
                         if self.grid.checkWin():
+                            self.yAgent.feedFinalReward(actions, self.yroot, "WIN")
                             print("YELLOW WINS\n")
                             win = True
                             break
@@ -173,6 +181,6 @@ else:
     g.close()
 
 c4 = c4(yroot, yAgent, rroot, rAgent, main_grid)
-c4.play(10, 1500) #training (number_of_games, number_of_iterations)
+c4.play(10, 5000) #training (number_of_games, number_of_iterations)
 c4.playAgainstRed(1, 1000) #play against human (number_of_games, number_of_iterations)
 
