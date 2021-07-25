@@ -91,7 +91,7 @@ class Node:
     def calculateUCB(self, N):
         if self.n == 0:
             return INF
-        ucb = (self.t/self.n) + (2*np.log(N)/self.n)**0.5
+        ucb = (self.t/self.n) + (2*np.log(self.parent.n)/self.n)**0.5
         return ucb
 
     def getMaxUcbNode(self, N):
@@ -119,28 +119,6 @@ class Node:
         max_node = self.children[max_ind]
         return max_node, max_ind, ucbs
 
-    def getMinUcbNode(self, N):
-        ucbs = []
-
-        if self.isTerminal:
-            return None
-
-        for node in self.children:
-            if node:
-                ucbs.append(node.calculateUCB(N))
-            else:
-                ucbs.append(None)
-
-        min_ind = 0
-        min_val = INF+1
-        l = len(self.children)
-        for i in range(l):
-            if ucbs[i] != None and ucbs[i] < min_val:
-                min_ind = i
-                min_val = ucbs[i]
-
-        min_node = self.children[min_ind]
-        return min_node, min_ind
 
     def checkLeaf(self):
         if len(self.children) == 0:
