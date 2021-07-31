@@ -17,6 +17,13 @@ RED = 2
 YELLOW = 1
 DRAW = -1
 MAX_MOVES = 42
+FINAL_LOSS = -100000
+TERMINAL_LOSS = -10000
+ROLLOUT_LOSS = -10000
+TERMINAL_WIN = 100
+ROLLOUT_WIN = 10
+TERMINAL_DRAW = 1
+ROLLOUT_DRAW = 0
 
 class NeuralNet(nn.Module):
     def __init__(self):
@@ -45,11 +52,9 @@ class c4Agent:
 
     def make_target(self, node):
         arr=[]
-        total=0
         for i in node.children:
             if i!=None:
                 arr.append(i.n/node.n)
-                total+=i.n
             else:
                 arr.append(0)
         return arr
@@ -98,11 +103,11 @@ class c4Agent:
 
     def getReward(self, winColor):
         if winColor == DRAW:
-            return 0
+            return ROLLOUT_DRAW
 
         if self.color == winColor:
-            return 1 #for win
-        return -1 #for loss
+            return ROLLOUT_WIN #for win
+        return ROLLOUT_LOSS #for loss
 
     def gridToNNState(self, state, colorToMove):
         nnState=[]
@@ -124,6 +129,9 @@ class c4Agent:
                 max_val=out[i].item()
                 max_ind=i
         return max_ind
+    
+    def getNNOutput(self, state, color):
+        return self.nnObj.forward(self.gridToNNState(state, color))
 
     def makeRandomVirtualMove(self, state, cols, color):
         action = -1
@@ -159,11 +167,11 @@ class c4Agent:
 
     def getRewardTerminal(self, winColor):
         if winColor == DRAW:
-            return 2
+            return TERMINAL_DRAW
 
         if self.color == winColor:
-            return 10 #for win
-        return -10000 #for loss
+            return TERMINAL_WIN #for win
+        return TERMINAL_LOSS #for loss
 
 
     def getBestMove(self, actions, n_iterations, root, grid):
@@ -193,6 +201,8 @@ class c4Agent:
         curr = node
         change = False
 
+        print(self.getNNOutput(node.state, self.color)) 
+        
         while count < n_iterations:
             if not change: #to reset curr to the initial node
                 #self.logger.log("LOG", "-------Running iteration %d-------"%(count+1))
@@ -285,9 +295,9 @@ class c4Agent:
                 node = prev_node.children[action]
 
         if res=="LOSS":
-            node.backpropagate(-1000000)
+            node.backpropagate(FINAL_LOSS)
         elif res=="WIN":
-            node.backpropagate(100)
+            node.backpropagate(TERMINAL_WIN)
         else:
-            node.backpropagate(1)
+            node.backpropagate(TERMINAL_DRAW)
 
