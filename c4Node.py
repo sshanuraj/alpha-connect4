@@ -91,7 +91,7 @@ class Node:
     def calculateUCB(self, N):
         if self.n == 0:
             return INF
-        ucb = (self.t/self.n) + (2*np.log(self.parent.n)/self.n)**0.5
+        ucb = (self.t/self.n) + (2*np.log(N)/self.n)**0.5
         return ucb
 
     def getMaxUcbNode(self, N):

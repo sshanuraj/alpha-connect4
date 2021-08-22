@@ -184,6 +184,6 @@ else:
     g.close()
 
 c4 = c4(yroot, yAgent, rroot, rAgent, main_grid)
-c4.play(30, 1000) #training (number_of_games, number_of_iterations)
+#c4.play(30, 1500) #training (number_of_games, number_of_iterations)
 c4.playAgainstYellow(1, 10000) #play against human (number_of_games, number_of_iterations)
 
